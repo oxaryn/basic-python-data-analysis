@@ -1,57 +1,68 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 
-# Φόρτωση δεδομένων
+# ============================
+# Load dataset
+# ============================
 df = pd.read_csv("life_expectancy.csv")
 
-# Καθαρισμός δεδομένων
-df_clean = df[["Geographic area", "TIME_PERIOD", "OBS_VALUE"]].copy()
-df_clean = df_clean.rename(columns={
+# ============================
+# Data cleaning
+# ============================
+# Keep only the necessary columns and rename them
+df_clean = df.rename(columns={
     "Geographic area": "Country",
     "TIME_PERIOD": "Year",
     "OBS_VALUE": "LifeExpectancy"
-})
-df_clean["Year"] = df_clean["Year"].astype(int)
+})[["Country", "Year", "LifeExpectancy"]]
 
-# Βασικά στατιστικά
-print(df_clean.head())
+# ============================
+# Descriptive statistics
+# ============================
+print("Life Expectancy Statistics:")
 print(df_clean["LifeExpectancy"].describe())
 
-# Top 10 χώρες 2023
-latest_year = df_clean["Year"].max()
-latest = df_clean[df_clean["Year"] == latest_year]
-top10 = latest.groupby("Country")["LifeExpectancy"].mean().sort_values(ascending=False).head(10)
+# Last year available
+last_year = df_clean["Year"].max()
+print(f"\nLast year available: {last_year}")
+
+# ============================
+# Top 10 countries (latest year)
+# ============================
+top10 = (
+    df_clean[df_clean["Year"] == last_year]
+    .groupby("Country")["LifeExpectancy"]
+    .mean()
+    .sort_values(ascending=False)
+    .head(10)
+)
+
 print("\nTop 10 countries:")
 print(top10)
 
-# Μέσο προσδόκιμο Ελλάδας
-greece = latest[latest["Country"] == "Greece"]["LifeExpectancy"].mean()
-if pd.notna(greece):
-    print(f"\nΜέσο προσδόκιμο ζωής στην Ελλάδα το {latest_year}: {greece:.2f} έτη")
-else:
-    print("\nΗ Ελλάδα δεν βρέθηκε στο dataset.")
+# ============================
+# Life Expectancy in Greece
+# ============================
+greece = df_clean[df_clean["Country"] == "Greece"]
 
-# --- Γράφημα εξέλιξης Ελλάδας ---
-greece_df = df_clean[df_clean["Country"] == "Greece"]
-
-plt.figure(figsize=(10,6))
-plt.plot(greece_df["Year"], greece_df["LifeExpectancy"], marker='o', color='blue')
-plt.title("Εξέλιξη Προσδόκιμου Ζωής στην Ελλάδα (1950-2023)")
-plt.xlabel("Έτος")
-plt.ylabel("Προσδόκιμο Ζωής (έτη)")
-plt.grid(True)
-plt.show()
-
-# --- Bar chart Top 10 χώρες ---
-top10_countries = top10.sort_values(ascending=True)  # για καλύτερη εμφάνιση στο horizontal bar
-
-plt.figure(figsize=(10,6))
-plt.barh(top10_countries.index, top10_countries.values, color='green')
-plt.title(f"Top 10 χώρες σε προσδόκιμο ζωής το {latest_year}")
-plt.xlabel("Προσδόκιμο Ζωής (έτη)")
-plt.ylabel("Χώρα")
-plt.grid(axis='x')
-plt.show()
-
+plt.figure(figsize=(10, 5))
+plt.plot(greece["Year"], greece["LifeExpectancy"], marker="o", color="blue")
+plt.title("Life Expectancy in Greece (1950–2023)")
+plt.xlabel("Year")
+plt.ylabel("Life Expectancy (Years)")
+plt.grid(True, linestyle="--", alpha=0.7)
+plt.tight_layout()
 plt.savefig("greece_life_expectancy.png")
+plt.close()
+
+# ============================
+# Top 10 Countries Bar Chart
+# ============================
+plt.figure(figsize=(10, 6))
+top10.plot(kind="bar", color="green")
+plt.title("Top 10 Countries by Life Expectancy (2023)")
+plt.ylabel("Life Expectancy (Years)")
+plt.xticks(rotation=45, ha="right")
+plt.tight_layout()
 plt.savefig("top10_countries.png")
+plt.close()
